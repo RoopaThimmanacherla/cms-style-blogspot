@@ -1,13 +1,24 @@
 const router = require('express').Router();
-const { Post } = require('../models');
+const { Post, User, Comment } = require('../models');
+const withAuth = require('../utils/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', withAuth, async (req, res) => {
   try {
     const postData = await Post.findAll({
+      attributes: ['title', 'post_content'],
+      order: [['created_at', 'DESC']],
       include: [
         {
           model: User,
-          attributes: ['username'],
+          attributes: ['username', 'id', 'email'],
+        },
+        {
+          model: Comment,
+          attributes: ['user_id', 'id', 'post_id', 'comment_text'],
+          include: {
+            model: User,
+            attributes: ['username', 'id', 'email'],
+          },
         },
       ],
     });
@@ -16,7 +27,6 @@ router.get('/', async (req, res) => {
     console.log(posts);
 
     res.status(200).json(posts);
-
     // Pass serialized data and session flag into template
     //res.render('homepage', { posts, logged_in: req.session.logged_in });
   } catch (err) {
